@@ -12,6 +12,7 @@ from butterflow import mux
 from butterflow import avinfo
 from butterflow import draw
 from butterflow.interpolate import time_steps_for_nfrs
+from tqdm import tqdm
 
 
 import logging
@@ -249,7 +250,7 @@ class Renderer(object):
         else:
             log.info("Showing a sample of the first and last %d runs:", show_n)
 
-        for run in range(0, runs):
+        for run in tqdm(range(0, runs)):
             fr_period = max(1, int(show_period * (runs - show_n*2)))
 
             if not in_show_debug_range(run) and not showed_snipped_message:
