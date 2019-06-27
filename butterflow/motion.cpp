@@ -2,7 +2,7 @@
 #include <iostream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/ocl/ocl.hpp>
+//#include <opencv2/ocl/ocl.hpp>
 #include <opencv2/video/tracking.hpp>
 #include "opencv-ndarray-conversion/conversion.h"
 
@@ -11,7 +11,7 @@ ocl_fu, ocl_fv, ocl_bu, ocl_bv, (D), (C), ocl_buf)
 
 using namespace std;
 using namespace cv;
-using namespace cv::ocl;
+//using namespace cv::ocl;
 
 
 static PyObject*
@@ -36,38 +36,44 @@ ocl_farneback_optical_flow(PyObject *self, PyObject *args) {
     }
 
     double scale = PyFloat_AsDouble(py_scale);
-    int levels   = PyInt_AsLong(py_levels);
-    int winsize  = PyInt_AsLong(py_winsize);
-    int iters    = PyInt_AsLong(py_iters);
-    int poly_n   = PyInt_AsLong(py_poly_n);
+    int levels   = PyLong_AsLong(py_levels);
+    int winsize  = PyLong_AsLong(py_winsize);
+    int iters    = PyLong_AsLong(py_iters);
+    int poly_n   = PyLong_AsLong(py_poly_n);
     double poly_sigma  = PyFloat_AsDouble(py_poly_sigma);
     bool fast_pyramids = PyObject_IsTrue(py_fast_pyramids);
-    int flags    = PyInt_AsLong(py_flags);
+    int flags    = PyLong_AsLong(py_flags);
 
     NDArrayConverter converter;
+    //UMat ocl_fr_1 = py_fr_1;
+    //UMat ocl_fr_2 = py_fr_2;
     Mat fr_1 = converter.toMat(py_fr_1);
     Mat fr_2 = converter.toMat(py_fr_2);
 
-    oclMat ocl_fr_1;
-    oclMat ocl_fr_2;
+    UMat ocl_fr_1;
+    UMat ocl_fr_2;
+    fr_1.copyTo(ocl_fr_1);
+    fr_2.copyTo(ocl_fr_2);
+    //ocl_fr_1.upload(fr_1);
+    //ocl_fr_2.upload(fr_2);
 
-    ocl_fr_1.upload(fr_1);
-    ocl_fr_2.upload(fr_2);
+    //ocl_fr_1.upload(fr_1);
+    //ocl_fr_2.upload(fr_2);
 
-    cv::ocl::FarnebackOpticalFlow calc_flow;
-    calc_flow.pyrScale  = scale;
-    calc_flow.numLevels = levels;
-    calc_flow.winSize   = winsize;
-    calc_flow.numIters  = iters;
-    calc_flow.polyN     = poly_n;
-    calc_flow.polySigma = poly_sigma;
-    calc_flow.fastPyramids = fast_pyramids;
-    calc_flow.flags     = flags;
+    cv::Ptr<FarnebackOpticalFlow> calc_flow = cv::FarnebackOpticalFlow::create();
+    calc_flow->setPyrScale  ( scale);
+    calc_flow->setNumLevels ( levels);
+    calc_flow->setWinSize   ( winsize);
+    calc_flow->setNumIters  ( iters);
+    calc_flow->setPolyN     ( poly_n);
+    calc_flow->setPolySigma ( poly_sigma);
+    calc_flow->setFastPyramids ( fast_pyramids);
+    calc_flow->setFlags     ( flags);
 
-    oclMat ocl_flow_x;
-    oclMat ocl_flow_y;
+    UMat ocl_flow_x;
+    UMat ocl_flow_y;
 
-    calc_flow(ocl_fr_1, ocl_fr_2, ocl_flow_x, ocl_flow_y);
+    calc_flow->calc(ocl_fr_1, ocl_fr_2, ocl_flow_x, ocl_flow_y);
 
     Mat mat_flow_x;
     Mat mat_flow_y;
@@ -95,7 +101,7 @@ ocl_farneback_optical_flow(PyObject *self, PyObject *args) {
 
 static PyObject*
 time_steps_for_nfrs(PyObject *self, PyObject *arg) {
-    int n = PyInt_AsLong(arg);   /* num of int frames */
+    int n = PyLong_AsLong(arg);   /* num of int frames */
     int sub_divisions  = n + 1;  /* splits in region from 0,1 */
     PyObject *py_steps = PyList_New(n);
 
@@ -127,7 +133,7 @@ ocl_interpolate_flow(PyObject *self, PyObject *args) {
         return (PyObject*)NULL;
     }
 
-    int int_each_go = PyInt_AsLong(py_int_each_go);
+    int int_each_go = PyLong_AsLong(py_int_each_go);
 
     if (int_each_go == 0) {
       return PyList_New(0);
@@ -141,8 +147,8 @@ ocl_interpolate_flow(PyObject *self, PyObject *args) {
     Mat bu   = converter.toMat(py_bu);
     Mat bv   = converter.toMat(py_bv);
 
-    oclMat fr_1_b, fr_1_g, fr_1_r;
-    oclMat fr_2_b, fr_2_g, fr_2_r;
+    UMat fr_1_b, fr_1_g, fr_1_r;
+    UMat fr_2_b, fr_2_g, fr_2_r;
 
     Mat channels[3];
 
@@ -156,19 +162,19 @@ ocl_interpolate_flow(PyObject *self, PyObject *args) {
     fr_2_g.upload(channels[1]);
     fr_2_r.upload(channels[2]);
 
-    oclMat ocl_fu;
-    oclMat ocl_fv;
-    oclMat ocl_bu;
-    oclMat ocl_bv;
+    UMat ocl_fu;
+    UMat ocl_fv;
+    UMat ocl_bu;
+    UMat ocl_bv;
 
     ocl_fu.upload(fu);
     ocl_fv.upload(fv);
     ocl_bu.upload(bu);
     ocl_bv.upload(bv);
 
-    oclMat ocl_buf;
-    oclMat ocl_new_b, ocl_new_g, ocl_new_r;
-    oclMat ocl_new_bgr;
+    UMat ocl_buf;
+    UMat ocl_new_b, ocl_new_g, ocl_new_r;
+    UMat ocl_new_bgr;
 
     PyObject *py_frames = PyList_New(0);
     PyObject *py_time_steps = time_steps_for_nfrs(self, py_int_each_go);
@@ -182,10 +188,10 @@ ocl_interpolate_flow(PyObject *self, PyObject *args) {
         ocl_inter_frames(fr_1_g, fr_2_g, ocl_new_g, ts);
         ocl_inter_frames(fr_1_r, fr_2_r, ocl_new_r, ts);
 
-        oclMat channels[] = {ocl_new_b, ocl_new_g, ocl_new_r};
+        UMat channels[] = {ocl_new_b, ocl_new_g, ocl_new_r};
         merge(channels, 3, ocl_new_bgr);
 
-        Mat mat_new_bgr;
+        UMat mat_new_bgr;
         ocl_new_bgr.download(mat_new_bgr);
         mat_new_bgr.convertTo(mat_new_bgr, CV_8UC3, 255.0);
 

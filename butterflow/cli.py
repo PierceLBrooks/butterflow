@@ -9,7 +9,8 @@ import logging
 import numpy.core.multiarray  # Bug: https://github.com/opencv/opencv/issues/8139
 import cv2
 from butterflow.settings import default as settings
-from butterflow import ocl, avinfo, motion
+#from settings import default as settings
+from butterflow import avinfo
 from butterflow.render import Renderer
 from butterflow.sequence import VideoSequence, Subregion
 from butterflow.__init__ import __version__
@@ -84,7 +85,7 @@ def main():
     gen.add_argument('-prb', '--probe', action='store_true',
                      help='Show media file information and exit')
     gen.add_argument('-v', '--verbosity', action='count',
-                     help='Set to increase output verbosity')
+                     help='Set to increase output verbosity', default=0)
     gen.add_argument('-q', '--quiet', action='store_true',
                      help='Set to suppress console output')
 
@@ -217,7 +218,6 @@ def main():
         settings['clbdir'] = os.path.join(cachedir, 'clb')
         if not os.path.exists(settings['clbdir']):
             os.makedirs(settings['clbdir'])
-        ocl.set_cache_path(settings['clbdir'] + os.sep)
 
     cachedir = settings['tempdir']
 
@@ -259,10 +259,6 @@ def main():
         print('Cache deleted, done.')
         return 0
 
-    if args.show_devices:
-        ocl.print_ocl_devices()
-        return 0
-
     if not args.video:
         print('No file specified')
         return 1
@@ -285,40 +281,30 @@ def main():
               settings['v_container'].upper()))
         return 0
 
-    if not args.sw and not ocl.compat_ocl_device_available():
-        print('No compatible OpenCL devices were detected. Must force software '
-              'rendering with the `-sw` flag to continue.')
-        return 1
-
     log.info('Version '+__version__)
     log.info('Cache directory:\t%s' % cachedir)
 
     for x in cachedirs:
         log.warn('Stale cache directory (delete with `--rm-cache`): %s' % x)
 
-    if not args.sw and ocl.compat_ocl_device_available():
-        log.info('At least one compatible OpenCL device was detected')
-    else:
-        log.warning('No compatible OpenCL devices were detected.')
+    #if args.device != -1:
+    #    try:
+    #        ocl.select_ocl_device(args.device)
+    #    except IndexError as error:
+    #        print('Error: '+str(error))
+    #        return 1
+    #    except ValueError:
+    #        if not args.sw:
+    #            print('An incompatible device was selected.\n'
+    #                  'Must force software rendering with the `-sw` flag to continue.')
+    #            return 1
 
-    if args.device != -1:
-        try:
-            ocl.select_ocl_device(args.device)
-        except IndexError as error:
-            print('Error: '+str(error))
-            return 1
-        except ValueError:
-            if not args.sw:
-                print('An incompatible device was selected.\n'
-                      'Must force software rendering with the `-sw` flag to continue.')
-                return 1
+    #s = "Using device: %s"
+    #if args.device == -1:
+    #    s += " (autoselected)"
+    #log.info(s % ocl.get_current_ocl_device_name())
 
-    s = "Using device: %s"
-    if args.device == -1:
-        s += " (autoselected)"
-    log.info(s % ocl.get_current_ocl_device_name())
-
-    use_sw_interpolate = args.sw
+    use_sw_interpolate = True#args.sw
 
     if args.flow_filter == 'gaussian':
         args.flow_filter = cv2.OPTFLOW_FARNEBACK_GAUSSIAN
@@ -335,9 +321,9 @@ def main():
         if use_sw_interpolate:
             return cv2.calcOpticalFlowFarneback(
                 x, y, pyr, levels, winsize, iters, polyn, polys, filt)
-        else:
-            return motion.ocl_farneback_optical_flow(
-                x, y, pyr, levels, winsize, iters, polyn, polys, fast, filt)
+        #else:
+        #    return motion.ocl_farneback_optical_flow(
+        #        x, y, pyr, levels, winsize, iters, polyn, polys, fast, filt)
 
     interpolate_fn = None
     if use_sw_interpolate:
@@ -347,9 +333,9 @@ def main():
                  "Do Ctrl+c to quit or suspend the process with Ctrl+z and "
                  "then stop it with `kill %1`, etc. You can list suspended "
                  "processes with `jobs`.)")
-    else:
-        interpolate_fn = motion.ocl_interpolate_flow
-        log.info("Hardware acceleration is enabled")
+    #else:
+    #    interpolate_fn = motion.ocl_interpolate_flow
+    #    log.info("Hardware acceleration is enabled")
 
     try:
         w, h = w_h_from_input_str(args.video_scale, av_info['w'], av_info['h'])
@@ -403,7 +389,7 @@ def main():
                    args.mark_frames,
                    args.audio)
 
-    ocl.set_num_threads(settings['ocv_threads'])
+    #ocl.set_num_threads(settings['ocv_threads'])
 
     log.info('Rendering:')
     added_rate = False
@@ -572,3 +558,4 @@ def sequence_from_input_str(s, src_duration, src_frs):
         else:
             raise ValueError('Unknown subregion syntax: {}'.format(sub))
     return seq
+

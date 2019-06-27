@@ -4,7 +4,6 @@
 
 import numpy as np
 import multiprocessing
-from itertools import izip
 import signal
 
 
@@ -50,7 +49,7 @@ def sw_interpolate_flow(prev_fr, next_fr, fu, fv, bu, bv, int_each_go):
                 res = args[0]
                 def pairwise(iterable):
                     a = iter(iterable)
-                    return izip(a, a)
+                    return zip(a, a)
                 for n, p in pairwise(res):
                     def alpha_blend(a, b, alpha):
                         return (1-alpha)*a + alpha*b

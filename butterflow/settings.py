@@ -4,7 +4,7 @@ import os
 import logging
 import tempfile
 import cv2
-import ocl
+#import ocl
 from butterflow.__init__ import __version__
 
 
@@ -50,10 +50,10 @@ default = {
     'crf':            18,       # visually lossless
     # scaling opts
     'video_scale':    1.0,
-    'scaler_up':      cv2.cv.CV_INTER_AREA,
+    'scaler_up':      cv2.INTER_AREA,
     # CV_INTER_CUBIC looks best but is slower, CV_INTER_LINEAR is faster but
     # still looks okay
-    'scaler_dn':      cv2.cv.CV_INTER_CUBIC,
+    'scaler_dn':      cv2.INTER_CUBIC,
     # muxing opts
     'v_container':    'mp4',
     # See: https://trac.ffmpeg.org/wiki/Encode/HighQualityAudio
@@ -91,13 +91,13 @@ default = {
     'imshow_ms':      1,
     # debug text settings
     'text_type':      'light',      # other options: `dark`, `stroke`
-    'light_color':    cv2.cv.RGB(255, 255, 255),
-    'dark_color':     cv2.cv.RGB(0, 0, 0),
+    'light_color':    (255, 255, 255),
+    'dark_color':     (0, 0, 0),
     # h_fits and v_fits is the minimium size in which the unscaled
     # CV_FONT_HERSHEY_PLAIN font text fits in the rendered video. The font is
     # scaled up and down based on this reference point
-    'font_face':      cv2.cv.CV_FONT_HERSHEY_PLAIN,
-    'font_type':      cv2.cv.CV_AA,
+    'font_face':      cv2.FONT_HERSHEY_PLAIN,
+    'font_type':      cv2.LINE_AA,
     'txt_max_scale':  1.0,
     'txt_thick':      1,
     'txt_stroke_thick':  2,
@@ -116,11 +116,11 @@ default = {
     'bar_s_pad':      0.12,  # relative padding on each side
     'bar_ln_thick':   3,     # pixels of lines that make outer rectangle
     'bar_stroke_thick':  1,  # size of the stroke in pixels
-    'bar_ln_type':    cv2.cv.CV_FILLED,  # -1, a filled line
+    'bar_ln_type':    cv2.FILLED,  # -1, a filled line
     'bar_in_pad':     3,     # padding from the inner bar
     'bar_thick':      15,    # thickness of the inner bar
-    'bar_color':      cv2.cv.RGB(255, 255, 255),
-    'bar_stroke_color':  cv2.cv.RGB(192, 192, 192),
+    'bar_color':      (255, 255, 255),
+    'bar_stroke_color':  (192, 192, 192),
     # frame marker settings
     'mrk_w_fits':     572,
     'mrk_h_fits':     142,
@@ -130,10 +130,10 @@ default = {
     'mrk_out_radius': 6,
     'mrk_in_thick':   -1,
     'mrk_in_radius':  4,
-    'mrk_ln_type':    cv2.cv.CV_AA,
-    'mrk_out_color':  cv2.cv.RGB(255, 255, 255),
-    'mrk_color':      cv2.cv.RGB(255, 255, 255),
-    'mrk_fill_color': cv2.cv.RGB(255, 0, 0)
+    'mrk_ln_type':    cv2.LINE_AA,
+    'mrk_out_color':  (255, 255, 255),
+    'mrk_color':      (255, 255, 255),
+    'mrk_fill_color': (255, 0, 0)
 }
 
 default['clbdir'] = os.path.join(default['tempdir'], 'clb')  # ocl cache files
@@ -156,4 +156,4 @@ for x in [default['clbdir'], default['tempdir']]:
         os.makedirs(x)
 
 # set the location of the clb cache
-ocl.set_cache_path(default['clbdir'] + os.sep)
+#ocl.set_cache_path(default['clbdir'] + os.sep)

@@ -26,7 +26,7 @@ int almost_equal(double a, double b) {
 
 static PyObject*
 get_av_info(PyObject *self, PyObject *arg) {
-    char *path = PyString_AsString(arg);
+    const char *path = PyUnicode_AsUTF8(arg);
     PyObject *py_info;
 
     av_register_all();
@@ -139,19 +139,19 @@ get_av_info(PyObject *self, PyObject *arg) {
     /* create dictionary with video information */
     py_info = PyDict_New();
 
-    py_safe_set(py_info, "path", PyString_FromString(path));
+    py_safe_set(py_info, "path", PyUnicode_FromString(path));
     py_safe_set(py_info, "v_stream_exists", PyBool_FromLong(v_stream_exists));
     py_safe_set(py_info, "a_stream_exists", PyBool_FromLong(a_stream_exists));
     py_safe_set(py_info, "s_stream_exists", PyBool_FromLong(s_stream_exists));
-    py_safe_set(py_info, "w", PyInt_FromLong(w));
-    py_safe_set(py_info, "h", PyInt_FromLong(h));
-    py_safe_set(py_info, "sar_n", PyInt_FromLong(sar.num));
-    py_safe_set(py_info, "sar_d", PyInt_FromLong(sar.den));
-    py_safe_set(py_info, "dar_n", PyInt_FromLong(dar.num));
-    py_safe_set(py_info, "dar_d", PyInt_FromLong(dar.den));
+    py_safe_set(py_info, "w", PyLong_FromLong(w));
+    py_safe_set(py_info, "h", PyLong_FromLong(h));
+    py_safe_set(py_info, "sar_n", PyLong_FromLong(sar.num));
+    py_safe_set(py_info, "sar_d", PyLong_FromLong(sar.den));
+    py_safe_set(py_info, "dar_n", PyLong_FromLong(dar.num));
+    py_safe_set(py_info, "dar_d", PyLong_FromLong(dar.den));
     py_safe_set(py_info, "duration", PyFloat_FromDouble(duration));
-    py_safe_set(py_info, "rate_n", PyInt_FromLong(rational_rate.num));
-    py_safe_set(py_info, "rate_d", PyInt_FromLong(rational_rate.den));
+    py_safe_set(py_info, "rate_n", PyLong_FromLong(rational_rate.num));
+    py_safe_set(py_info, "rate_d", PyLong_FromLong(rational_rate.den));
     py_safe_set(py_info, "rate", PyFloat_FromDouble(rate));
     py_safe_set(py_info, "frames", PyLong_FromUnsignedLong(frames));
 
@@ -207,18 +207,18 @@ print_av_info(PyObject *self, PyObject *arg) {
            "\n  Duration           \t: %02d:%02d:%02d (%.2fs)"
            "\n  Num of frames      \t: %lu\n",
         streams,
-        (int)PyInt_AsLong(PyDict_GetItemString(py_info, "w")),
-        (int)PyInt_AsLong(PyDict_GetItemString(py_info, "h")),
-        (int)PyInt_AsLong(PyDict_GetItemString(py_info, "sar_n")),
-        (int)PyInt_AsLong(PyDict_GetItemString(py_info, "sar_d")),
-        (int)PyInt_AsLong(PyDict_GetItemString(py_info, "dar_n")),
-        (int)PyInt_AsLong(PyDict_GetItemString(py_info, "dar_d")),
+        (int)PyLong_AsLong(PyDict_GetItemString(py_info, "w")),
+        (int)PyLong_AsLong(PyDict_GetItemString(py_info, "h")),
+        (int)PyLong_AsLong(PyDict_GetItemString(py_info, "sar_n")),
+        (int)PyLong_AsLong(PyDict_GetItemString(py_info, "sar_d")),
+        (int)PyLong_AsLong(PyDict_GetItemString(py_info, "dar_n")),
+        (int)PyLong_AsLong(PyDict_GetItemString(py_info, "dar_d")),
         (float)PyFloat_AsDouble(PyDict_GetItemString(py_info, "rate")),
         hrs,
         mins,
         secs,
         duration / 1000.0,
-        PyInt_AsUnsignedLongMask(PyDict_GetItemString(py_info, "frames")));
+        PyLong_AsUnsignedLongMask(PyDict_GetItemString(py_info, "frames")));
 
     Py_DECREF(py_info);
     Py_RETURN_NONE;
@@ -232,7 +232,20 @@ static PyMethodDef ModuleMethods[] = {
     {NULL, NULL, 0, NULL}
 };
 
+static struct PyModuleDef ModuleDef = {
+        PyModuleDef_HEAD_INIT,
+        "avinfo",
+        NULL,
+        0,//sizeof(struct module_state),
+        ModuleMethods,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+};
+
 PyMODINIT_FUNC
-initavinfo(void) {
-    (void)Py_InitModule("avinfo", ModuleMethods);
+PyInit_avinfo(void) {
+    (void)PyModule_Create(&ModuleDef);
+    //(void)Py_InitModule("avinfo", ModuleMethods);
 }

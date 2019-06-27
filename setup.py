@@ -148,10 +148,10 @@ old_linkflags = linkflags
 if cl_linkflags:
     linkflags.extend(cl_linkflags)
 
-ocl_ext = Extension('butterflow.ocl', extra_compile_args=cxxflags,
-                    extra_link_args=linkflags,
-                    libraries=mklist(cl_lib, 'opencv_core', 'opencv_ocl'),
-                    sources=[os.path.join(pkgdir, 'ocl.cpp')], language='c++')
+#ocl_ext = Extension('butterflow.ocl', extra_compile_args=cxxflags,
+#                    extra_link_args=linkflags,
+#                    libraries=mklist(cl_lib, 'opencv_core', 'opencv_ocl'),
+#                    sources=[os.path.join(pkgdir, 'ocl.cpp')], language='c++')
 
 linkflags = old_linkflags
 
@@ -176,21 +176,21 @@ if is_osx:
 nddir = os.path.join(dependsdir, 'opencv-ndarray-conversion')
 nd_includes = os.path.join(nddir, 'include')
 
-motion_ext = Extension('butterflow.motion',
-                       extra_compile_args=cxxflags,
-                       extra_link_args=linkflags,
-                       include_dirs=mklist(nd_includes, np_includes),
-                       libraries=['opencv_core', 'opencv_ocl',
-                                  'opencv_imgproc'],
-                       sources=[os.path.join(pkgdir, 'motion.cpp'),
-                                os.path.join(nddir, 'src', 'conversion.cpp')],
-                       language='c++')
+#motion_ext = Extension('butterflow.motion',
+#                       extra_compile_args=cxxflags,
+#                       extra_link_args=linkflags,
+#                       include_dirs=mklist(nd_includes, np_includes),
+#                       libraries=['opencv_core', 'opencv_ocl',
+#                                  'opencv_imgproc'],
+#                       sources=[os.path.join(pkgdir, 'motion.cpp'),
+#                                os.path.join(nddir, 'src', 'conversion.cpp')],
+#                       language='c++')
 
 # shared args
 setup_kwargs = {
     'name':         'butterflow',
     'packages':     find_packages(exclude=['tests']),
-    'ext_modules':  [avinfo_ext, ocl_ext, motion_ext],
+    'ext_modules':  [avinfo_ext],
     'version':      version,
     'author':       'Duong Pham',
     'author_email': 'dthpham@gmail.com',

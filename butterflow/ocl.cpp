@@ -7,7 +7,7 @@
     #include <CL/cl.h>
 #endif
 #include <opencv2/core/core.hpp>
-#include <opencv2/ocl/ocl.hpp>
+#include <opencv2/core/ocl.hpp>
 
 #define cl_safe(A) if((A) != CL_SUCCESS) { \
     PyErr_SetString(PyExc_RuntimeError, "opencl call failed"); \
@@ -55,7 +55,7 @@ print_ocl_devices(PyObject *self, PyObject *noargs) {
     size_t d_max_work_item_sizes[3];
     int d_num = 0;
 
-    const DeviceInfo& currentDevice = Context::getContext()->getDeviceInfo();
+    const cl_int currentDevice = Context::getContext()->getDeviceInfo();
     cl_uint currentVendorId = (cl_uint)currentDevice.deviceVendorId;
 
     cl_safe(clGetPlatformIDs(32, platforms, &n_platforms));
