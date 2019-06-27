@@ -285,26 +285,7 @@ def main():
     log.info('Cache directory:\t%s' % cachedir)
 
     for x in cachedirs:
-        log.warn('Stale cache directory (delete with `--rm-cache`): %s' % x)
-
-    #if args.device != -1:
-    #    try:
-    #        ocl.select_ocl_device(args.device)
-    #    except IndexError as error:
-    #        print('Error: '+str(error))
-    #        return 1
-    #    except ValueError:
-    #        if not args.sw:
-    #            print('An incompatible device was selected.\n'
-    #                  'Must force software rendering with the `-sw` flag to continue.')
-    #            return 1
-
-    #s = "Using device: %s"
-    #if args.device == -1:
-    #    s += " (autoselected)"
-    #log.info(s % ocl.get_current_ocl_device_name())
-
-    use_sw_interpolate = True#args.sw
+        log.warning('Stale cache directory (delete with `--rm-cache`): %s' % x)
 
     if args.flow_filter == 'gaussian':
         args.flow_filter = cv2.OPTFLOW_FARNEBACK_GAUSSIAN
@@ -318,24 +299,24 @@ def main():
                    winsize=args.winsize, iters=args.iters, polyn=args.poly_n,
                    polys=args.poly_s, fast=args.fast_pyr,
                    filt=args.flow_filter):
-        if use_sw_interpolate:
-            return cv2.calcOpticalFlowFarneback(
-                x, y, pyr, levels, winsize, iters, polyn, polys, filt)
-        #else:
-        #    return motion.ocl_farneback_optical_flow(
-        #        x, y, pyr, levels, winsize, iters, polyn, polys, fast, filt)
+        return cv2.calcOpticalFlowFarneback(
+            prev=x, next=y, flow=None, pyr_scale=pyr, levels=levels, winsize=winsize, iterations=iters, poly_n=polyn, poly_sigma=polys, flags=filt)
 
-    interpolate_fn = None
-    if use_sw_interpolate:
-        from butterflow.interpolate import sw_interpolate_flow
-        interpolate_fn = sw_interpolate_flow
-        log.warn("Hardware acceleration is disabled. Rendering will be slow. "
+    if cv2.ocl.haveOpenCL():
+        cv2.ocl.setUseOpenCL(True)
+    else:
+        print("OpenCL not available!")
+
+    if cv2.ocl.useOpenCL():
+        print("Using hardware acceleration")
+    else:
+        log.warning("Hardware acceleration is disabled. Rendering will be slow. "
                  "Do Ctrl+c to quit or suspend the process with Ctrl+z and "
                  "then stop it with `kill %1`, etc. You can list suspended "
                  "processes with `jobs`.)")
-    #else:
-    #    interpolate_fn = motion.ocl_interpolate_flow
-    #    log.info("Hardware acceleration is enabled")
+
+    from butterflow.interpolate import sw_interpolate_flow
+    interpolate_fn = sw_interpolate_flow
 
     try:
         w, h = w_h_from_input_str(args.video_scale, av_info['w'], av_info['h'])
@@ -350,7 +331,7 @@ def main():
     def nearest_even_int(x, tag=""):
         new_x = x & ~1
         if x != new_x:
-            log.warn("%s: %d is not divisible by 2, setting to %d",
+            log.warning("%s: %d is not divisible by 2, setting to %d",
                      tag, x, new_x)
         return new_x
 
@@ -361,7 +342,7 @@ def main():
             old_w2 = w2
             w2 -= 2
             w2 = max(w2, 0)
-            log.warn('W: %d > 256 but is not divisible by 4, setting to %d',
+            log.warning('W: %d > 256 but is not divisible by 4, setting to %d',
                      old_w2, w2)
     h2 = nearest_even_int(h, "H")
 
@@ -389,8 +370,6 @@ def main():
                    args.mark_frames,
                    args.audio)
 
-    #ocl.set_num_threads(settings['ocv_threads'])
-
     log.info('Rendering:')
     added_rate = False
     for x in str(rnd.sequence).split('\n'):
@@ -416,7 +395,7 @@ def main():
                 overlaps = True
                 break
         if overlaps:
-            log.warn('At least 1 subregion overlaps with another')
+            log.warning('At least 1 subregion overlaps with another')
             break
 
     success = True
@@ -431,8 +410,8 @@ def main():
     if success:
         log_function = log.info
         if rnd.frs_written > rnd.frs_to_render:
-            log_function = log.warn
-            log.warn('Unexpected write ratio')
+            log_function = log.warning
+            log.warning('Unexpected write ratio')
         log_function('Write ratio: {}/{}, ({:.2f}%)'.format(
                  rnd.frs_written,
                  rnd.frs_to_render,
@@ -450,8 +429,8 @@ def main():
         log.info('Rendering took {:.3g} mins, done.'.format(total_time / 60))
         return 0
     else:
-        log.warn('Quit unexpectedly')
-        log.warn('Files were left in the cache @ '+settings['tempdir']+'.')
+        log.warning('Quit unexpectedly')
+        log.warning('Files were left in the cache @ '+settings['tempdir']+'.')
         return 1
 
 
