@@ -5,6 +5,7 @@ import os
 import sys
 import ast
 import re
+import platform
 import subprocess
 from setuptools import find_packages
 import functools
@@ -49,16 +50,22 @@ py_ver_X = sys.version_info.major
 py_ver_Y = sys.version_info.minor
 py_ver = '{}.{}'.format(py_ver_X, py_ver_Y)
 
+cflags       = ['-std=c11']  # c compilation flags
+linkflags    = []            # linker flags
+cxxflags     = []
+
 homebrew_prefix = None
 homebrew_site_pkgs = None
 try:
     homebrew_prefix = subprocess.Popen(['brew', '--prefix'],
                                        stdout=subprocess.PIPE)
-    homebrew_prefix = homebrew_prefix.stdout.read().strip()
+    homebrew_prefix = homebrew_prefix.stdout.read().decode().strip()
 except Exception:
     # fall back to environment variable if brew command is not found
     if 'HOMEBREW_PREFIX' in os.environ:
         homebrew_prefix = os.environ['HOMEBREW_PREFIX']
+    else:
+        homebrew_prefix = None
 if homebrew_prefix is not None:
     homebrew_site_pkgs = os.path.join(homebrew_prefix, 'lib/python{}/'
                                       'site-packages/'.format(py_ver))
@@ -69,10 +76,8 @@ if homebrew_prefix is not None:
     # Homebrew site-packages should preceed all others on sys.path
     # if it exists:
     sys.path.insert(1, homebrew_site_pkgs)
-
-cflags       = ['-std=c11']  # c compilation flags
-linkflags    = []            # linker flags
-cxxflags     = []
+    cflags.append('-I{}/include'.format(homebrew_prefix))
+    linkflags.append('-L{}/lib'.format(homebrew_prefix))
 
 is_win = sys.platform.startswith('win')
 is_osx = sys.platform.startswith('darwin')
@@ -128,7 +133,7 @@ elif is_osx:
     # shouldn't mention Python.
     # See: https://github.com/Homebrew/homebrew-science/pull/1886
     linkflags.append('-Wl,-undefined,dynamic_lookup')
-    linkflags.extend(['-arch', 'x86_64'])
+    linkflags.extend(['-arch', platform.uname().machine])
 
 avinfo_ext = Extension('butterflow.avinfo', extra_compile_args=cflags,
                        extra_link_args=linkflags,

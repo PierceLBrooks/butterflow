@@ -29,7 +29,9 @@ get_av_info(PyObject *self, PyObject *arg) {
     const char *path = PyUnicode_AsUTF8(arg);
     PyObject *py_info;
 
+#if ((defined(LIBAVFORMAT_VERSION_INT)) && (LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 12, 0)))
     av_register_all();
+#endif
 
     AVFormatContext *format_ctx = avformat_alloc_context();
 
@@ -100,7 +102,17 @@ get_av_info(PyObject *self, PyObject *arg) {
             duration = c_duration;
         }
 
+#if ((defined(LIBAVCODEC_VERSION_INT)) && (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57, 48, 0)))
         AVCodecContext *v_codec_ctx = format_ctx->streams[v_stream_idx]->codec;
+#else
+        AVCodecContext *v_codec_ctx = avcodec_alloc_context3(NULL);
+        rc = avcodec_parameters_to_context(v_codec_ctx, format_ctx->streams[v_stream_idx]->codecpar);
+        if (rc < 0) {
+            avformat_close_input(&format_ctx);
+            PyErr_SetString(PyExc_RuntimeError, "no stream codec found");
+            return (PyObject*)NULL;
+        }
+#endif
 
         w = v_codec_ctx->width;
         h = v_codec_ctx->height;
@@ -246,6 +258,10 @@ static struct PyModuleDef ModuleDef = {
 
 PyMODINIT_FUNC
 PyInit_avinfo(void) {
+#if ((defined(PY_MAJOR_VERSION)) && (PY_MAJOR_VERSION > 2))
+    return PyModule_Create(&ModuleDef);
+#else
     (void)PyModule_Create(&ModuleDef);
     //(void)Py_InitModule("avinfo", ModuleMethods);
+#endif
 }
